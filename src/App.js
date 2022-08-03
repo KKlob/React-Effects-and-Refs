@@ -8,7 +8,8 @@ function App() {
   const deckId = useRef();
   const remaining = useRef();
   const [card, setCard] = useState(null);
-  //let contDraw = useRef(false);
+  const timerId = useRef();
+  const [contDraw, setContDraw] = useState(false);
 
   useEffect(function setupDeck() {
     async function getDeck() {
@@ -17,6 +18,26 @@ function App() {
     }
     getDeck();
   }, []);
+
+  useEffect(function drawTimer() {
+    if (contDraw) {
+      timerId.current = setInterval(() => {
+        if (remaining.current !== 0) {
+          drawCard();
+        } else {
+          setContDraw(false);
+        }
+      }, 1000);
+    }
+
+    return function cleanUpDrawTimer() {
+      clearInterval(timerId.current);
+    }
+  }, [contDraw]);
+
+  function handleClick() {
+    !contDraw ? setContDraw(true) : setContDraw(false);
+  }
 
   function drawCard() {
     async function draw() {
@@ -37,7 +58,7 @@ function App() {
   }
   return (
     <div className="App">
-      {remaining.current === 0 ? <div /> : <button onClick={drawCard}>Get a card!</button>}
+      {remaining.current === 0 ? <div /> : <button onClick={handleClick}>{contDraw ? "Stop Drawing" : "Get a card!"}</button>}
       <div>
         {card ? <Card card={card} /> : <div />}
       </div>
