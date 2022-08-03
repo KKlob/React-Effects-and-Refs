@@ -1,42 +1,43 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import Card from './Card';
 
 function App() {
 
+  const BASE_URL = "http://deckofcardsapi.com/api/deck/";
+  const deckId = useRef();
+  const remaining = useRef();
   const [card, setCard] = useState(null);
-  const BASE_URL = 'http://deckofcardsapi.com/api/deck/';
-  let url = useRef(null);
-  let deckId = useRef(null);
-  let remaining = useRef(52);
+  //let contDraw = useRef(false);
 
-  function getCard() {
-    async function setDeckGetCard() {
-      if (!deckId.current) {
-        url.current = BASE_URL + `new/draw/?count=1`;
-      } else {
-        url.current = BASE_URL + deckId.current + `/draw/?count=1`;
-      }
-      const resp = await axios.get(url.current);
+  useEffect(function setupDeck() {
+    async function getDeck() {
+      const resp = await axios.get(BASE_URL + "new/shuffle/");
       deckId.current = resp.data.deck_id;
+    }
+    getDeck();
+  }, []);
+
+  function drawCard() {
+    async function draw() {
+      const resp = await axios.get(BASE_URL + deckId.current + "/draw/?count=1");
       remaining.current = resp.data.remaining;
       setCard(resp.data.cards[0])
     }
-    setDeckGetCard();
+    draw();
   }
 
   function shuffleDeck() {
-    async function setupDeck() {
-      await axios.get(BASE_URL + deckId.current + "/shuffle/");
+    async function resetDeck() {
+      const resp = await axios.get(BASE_URL + deckId.current + "/shuffle/");
+      remaining.current = resp.data.remaining;
+      setCard(null);
     }
-    setupDeck();
-    remaining.current = 52;
-    setCard(null);
+    resetDeck()
   }
-
   return (
     <div className="App">
-      {remaining.current > 0 ? <button onClick={getCard}>Get a card!</button> : <div />}
+      {remaining.current === 0 ? <div /> : <button onClick={drawCard}>Get a card!</button>}
       <div>
         {card ? <Card card={card} /> : <div />}
       </div>
